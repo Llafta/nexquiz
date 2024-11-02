@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif</title>
+    <style>
+        /* Gaya Dasar */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: url('https://source.unsplash.com/1600x900/?galaxy') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            color: #fff; /* Mengubah warna teks agar terlihat di latar belakang gelap */
+        }
+        .quiz-container {
+            background: rgba(0, 0, 0, 0.7); /* Menggunakan latar belakang semi-transparan hitam */
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        .quiz-container h2 {
+            font-size: 26px;
+            margin: 0 0 20px;
+            color: #4b8bff;
+        }
+        .question {
+            font-size: 18px;
+            margin: 15px 0;
+        }
+        .answer-btn {
+            display: block;
+            background: #4b8bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            margin: 6px 0;
+            width: 100%;
+            font-size: 16px;
+            transition: background 0.3s ease, transform 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .answer-btn:hover {
+            background: #3a73d9;
+            transform: scale(1.03);
+        }
+        .timer {
+            font-size: 18px;
+            color: #e74c3c;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .score {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #2ecc71;
+        }
+        /* Efek Jawaban */
+        .correct {
+            background-color: #2ecc71 !important;
+        }
+        .incorrect {
+            background-color: #e74c3c !important;
+        }
+        /* Efek Visual */
+        .firework {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: url('https://i.imgur.com/sYj20XJ.gif') center/contain no-repeat;
+            display: none;
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        .image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none; /* Sembunyikan gambar di awal */
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container" id="quiz-container">
+        <h2>Kuis Interaktif</h2>
+        <div class="timer" id="timer">15</div>
+        <div id="question-container">
+            <p class="question" id="question"></p>
+            <button class="answer-btn" onclick="selectAnswer(0)"></button>
+            <button class="answer-btn" onclick="selectAnswer(1)"></button>
+            <button class="answer-btn" onclick="selectAnswer(2)"></button>
+            <button class="answer-btn" onclick="selectAnswer(3)"></button>
+            <img id="answer-image" class="image" src="" alt="Gambar Jawaban">
+        </div>
+        <div class="score" id="score">Skor: 0</div>
+        <button id="restart-button" style="display:none;" onclick="restartQuiz()">Mulai Ulang Kuis</button>
+    </div>
+    <div class="firework" id="firework"></div>
+
+    <audio id="correct-sound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+    <audio id="incorrect-sound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+
+    <script>
+        const questions = [
+            {
+                question: "Siapa penemu WWW?",
+                answers: ["Steve Jobs", "Tim Berners-Lee", "Bill Gates", "Mark Zuckerberg"],
+                correct: 1,
+                answerImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Tim_Berners-Lee_-_2013.jpg/800px-Tim_Berners-Lee_-_2013.jpg"
+            },
+            {
+                question: "Apa bahasa pemrograman untuk membuat website?",
+                answers: ["Python", "Java", "HTML", "C++"],
+                correct: 2,
+                answerImage: "https://www.w3schools.com/images/w3schools_green.jpg"
+            },
+            {
+                question: "Apa singkatan dari CSS?",
+                answers: ["Computer Style Sheets", "Creative Style System", "Cascading Style Sheets", "Custom Style Sheets"],
+                correct: 2,
+                answerImage: "https://www.w3schools.com/w3images/css.png"
+            },
+            {
+                question: "JavaScript digunakan untuk?",
+                answers: ["Menata halaman web", "Membuat fungsi interaktif", "Membuat server", "Mengedit gambar"],
+                correct: 1,
+                answerImage: "https://www.w3schools.com/images/javascript.png"
+            },
+            {
+                question: "Apakah itu HTML?",
+                answers: ["Bahasa markup untuk membuat halaman web", "Bahasa pemrograman server", "Sistem manajemen database", "Bahasa pemrograman untuk aplikasi desktop"],
+                correct: 0,
+                answerImage: "https://www.w3schools.com/images/html.png"
+            },
+            {
+                question: "SQL digunakan untuk?",
+                answers: ["Menata halaman web", "Mengelola database", "Membuat animasi", "Mengelola jaringan"],
+                correct: 1,
+                answerImage: "https://www.w3schools.com/images/sql.png"
+            },
+            {
+                question: "Apa fungsi dari git?",
+                answers: ["Mengelola kode versi", "Menata halaman web", "Membuat server", "Mengelola email"],
+                correct: 0,
+                answerImage: "https://git-scm.com/images/logos/git-logo@2x.png"
+            },
+            {
+                question: "Siapa yang menciptakan Linux?",
+                answers: ["Linus Torvalds", "Dennis Ritchie", "Steve Jobs", "Mark Zuckerberg"],
+                correct: 0,
+                answerImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Linux_logo.png/800px-Linux_logo.png"
+            },
+            {
+                question: "Apa itu API?",
+                answers: ["Antarmuka Pemrograman Aplikasi", "Sistem Manajemen Database", "Bahasa Pemrograman", "Platform Cloud"],
+                correct: 0,
+                answerImage: "https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing/API.png"
+            },
+            {
+                question: "Apa yang dimaksud dengan cloud computing?",
+                answers: ["Menyimpan data di server lokal", "Menyimpan data di internet", "Membuat aplikasi desktop", "Sistem operasi untuk smartphone"],
+                correct: 1,
+                answerImage: "https://cloud.google.com/images/cloud-architecture.png"
+            },
+            {
+                question: "Apa yang dimaksud dengan debugging?",
+                answers: ["Menemukan dan memperbaiki kesalahan dalam kode", "Menulis kode baru", "Mengelola database", "Membuat server"],
+                correct: 0,
+                answerImage: "https://miro.medium.com/max/2000/1*mZUg4GmLJ5m3YHNGm7D65g.png"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        const totalTime = 15; // Total waktu untuk setiap pertanyaan
+        let remainingTime = totalTime;
+
+        function startTimer() {
+            remainingTime = totalTime; // Reset waktu
+            document.getElementById('timer').innerText = remainingTime;
+            timer = setInterval(() => {
+                remainingTime--;
+                document.getElementById('timer').innerText = remainingTime;
+                if (remainingTime <= 0) {
+                    clearInterval(timer);
+                    showFinalScore();
+                }
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            clearInterval(timer); // Hentikan timer dari pertanyaan sebelumnya
+            startTimer(); // Mulai timer untuk pertanyaan baru
+
+            const currentQuestion = questions[currentQuestionIndex];
+            document.getElementById('question').innerText = currentQuestion.question;
+
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach((button, index) => {
+                button.innerText = currentQuestion.answers[index];
+                button.classList.remove('correct', 'incorrect'); // Reset kelas
+            });
+            document.getElementById('answer-image').style.display = 'none'; // Sembunyikan gambar jawaban
+        }
+
+        function selectAnswer(index) {
+            const currentQuestion = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            if (index === currentQuestion.correct) {
+                score++;
+                document.getElementById('correct-sound').play();
+                buttons[index].classList.add('correct');
+                showFirework(); // Tampilkan efek kembang api
+                document.getElementById('answer-image').src = currentQuestion.answerImage;
+                document.getElementById('answer-image').style.display = 'block'; // Tampilkan gambar jawaban
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        loadQuestion();
+                    } else {
+                        showFinalScore();
+                    }
+                }, 2000); // Tunggu 2 detik sebelum memuat pertanyaan berikutnya
+            } else {
+                document.getElementById('incorrect-sound').play();
+                buttons[index].classList.add('incorrect');
+                setTimeout(() => {
+                    showFinalScore();
+                }, 2000); // Tunggu 2 detik sebelum menunjukkan hasil akhir
+            }
+        }
+
+        function showFinalScore() {
+            clearInterval(timer); // Hentikan timer
+            document.getElementById('question-container').innerHTML = `Kuis Selesai! Skor Akhir Anda: ${score}`;
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('score').style.display = 'none';
+            document.getElementById('restart-button').style.display = 'block'; // Tampilkan tombol mulai ulang
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('score').innerText = `Skor: ${score}`;
+            document.getElementById('timer').style.display = 'block';
+            document.getElementById('restart-button').style.display = 'none';
+            loadQuestion();
+        }
+
+        function showFirework() {
+            const firework = document.getElementById('firework');
+            firework.style.display = 'block';
+            firework.classList.add('shake');
+            setTimeout(() => {
+                firework.style.display = 'none';
+                firework.classList.remove('shake');
+            }, 1000);
+        }
+
+        // Memulai kuis saat halaman dimuat
+        loadQuestion();
+    </script>
+</body>
+</html>
